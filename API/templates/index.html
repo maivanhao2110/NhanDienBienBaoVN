@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhận Diện Biển Báo - Nhóm 7</title>
+    <!-- Use Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container glass-panel">
+        <header>
+            <h1>Hệ Thống Nhận Diện Biển Báo Giao Thông</h1>
+            <h2 class="subtitle">Nhóm 7 - Trí Tuệ Nhân Tạo</h2>
+        </header>
+
+        <main>
+            <div class="upload-section">
+                <form id="uploadbanner" enctype="multipart/form-data" method="post" action="/image">
+                    <div class="file-drop-area">
+                        <span class="file-message">Kéo thả ảnh vào đây hoặc bấm để chọn</span>
+                        <input class="file-input" id="fileupload" name="image_name" type="file" accept="image/*" required/>
+                    </div>
+                    
+                    <button class="btn-submit" type="submit" id="submit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        Phân Tích Bằng AI
+                    </button>
+                </form>
+            </div>
+            
+            <div class="info-section">
+                <p>💡 Hệ thống sử dụng công nghệ <b>YOLOv8</b> để phát hiện và khoanh vùng các loại biển báo giao thông Việt Nam theo thời gian thực.</p>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
