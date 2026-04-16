@@ -5,30 +5,81 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nhận Diện Biển Báo - Nhóm 7</title>
-    <!-- Use Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container glass-panel">
         <header>
-            <h1>Hệ Thống Nhận Diện Biển Báo Giao Thông</h1>
+            <h1>Hệ Thống Nhận Diện Biển Báo</h1>
             <h2 class="subtitle">Nhóm 7 - Trí Tuệ Nhân Tạo</h2>
+            
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('image-tab')">📷 Ảnh</button>
+                <button class="tab-btn" onclick="switchTab('video-tab')">🎥 Video</button>
+                <button class="tab-btn" onclick="switchTab('camera-tab')">🔴 Camera</button>
+            </div>
         </header>
 
         <main>
-            <div class="upload-section">
-                <form id="uploadbanner" enctype="multipart/form-data" method="post" action="/image">
+            <!-- TAB ẨNH -->
+            <div id="image-tab" class="tab-content active">
+                <form id="uploadbanner" onsubmit="handleImageUpload(event)">
                     <div class="file-drop-area">
                         <span class="file-message">Kéo thả ảnh vào đây hoặc bấm để chọn</span>
-                        <input class="file-input" id="fileupload" name="image_name" type="file" accept="image/*" required/>
+                        <input class="file-input" id="imageInput" type="file" accept="image/*" required onchange="updateFileMessage(this)"/>
                     </div>
                     
-                    <button class="btn-submit" type="submit" id="submit">
+                    <button class="btn-submit" type="submit" id="submitImage">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                        Phân Tích Bằng AI
+                        Phân Tích AI
                     </button>
                 </form>
+
+                <div id="image-loading" class="loading-state" style="display:none;">Đang phân tích ảnh... Vui lòng đợi.</div>
+                
+                <div id="image-result" class="result-container" style="display:none;">
+                    <h3>Kết quả phân tích: <span id="image-classes"></span></h3>
+                    <div class="audio-player">
+                        <span>🔊</span> <audio id="image-audio" controls></audio>
+                    </div>
+                    <div class="image-showcase mt-1">
+                        <img id="result-img" src="" alt="Ảnh sau xử lý" class="result-img">
+                    </div>
+                    <button class="btn-secondary mt-1" onclick="resetImageTab()">Tải ảnh khác</button>
+                </div>
+            </div>
+
+            <!-- TAB VIDEO -->
+            <div id="video-tab" class="tab-content" style="display:none;">
+                 <div class="file-drop-area" id="video-upload-area">
+                    <span class="file-message">Kéo thả Video vào đây hoặc bấm để chọn</span>
+                    <input class="file-input" id="videoInput" type="file" accept="video/mp4,video/avi,video/webm" onchange="handleVideoFile(this)"/>
+                </div>
+                <!-- Video container -->
+                <div id="video-player-container" class="media-container" style="display:none;">
+                    <video id="videoElement" controls playsinline></video>
+                    <canvas id="videoOverlay" class="media-overlay"></canvas>
+                    
+                    <div class="mt-1 d-flex gap-1">
+                        <button class="btn-secondary" onclick="resetVideoTab()">Đóng video</button>
+                        <span id="video-processing-status" class="status-badge">Đang xử lý Real-time</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CAMERA -->
+            <div id="camera-tab" class="tab-content" style="display:none;">
+                <div class="camera-actions mb-1 d-flex gap-1">
+                    <button class="btn-submit" id="btn-start-camera" onclick="startCamera()">Bật Camera</button>
+                    <button class="btn-secondary" id="btn-stop-camera" onclick="stopCamera()" style="display:none;">Tắt Camera</button>
+                </div>
+                
+                <div id="camera-container" class="media-container" style="display:none;">
+                    <video id="webcamElement" autoplay playsinline muted></video>
+                    <canvas id="webcamOverlay" class="media-overlay"></canvas>
+                </div>
+                <div id="camera-processing-status" class="status-badge mt-1" style="display:none;">Đang phân tích Real-time...</div>
             </div>
             
             <div class="info-section">
@@ -36,5 +87,6 @@
             </div>
         </main>
     </div>
+    <script src="/static/main.js"></script>
 </body>
 </html>
