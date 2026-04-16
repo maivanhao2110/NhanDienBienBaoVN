@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 from gtts import gTTS
+import easyocr
 
 app = Flask(__name__)
 
@@ -18,6 +19,10 @@ if not os.path.exists(model_path):
     print(f"Warning: Không tìm thấy {model_path}. Dùng tạm mô hình gốc yolov8n.pt.")
     model_path = 'yolov8n.pt'
 model = YOLO(model_path)
+
+print("Đang khởi tạo EasyOCR... (lần đầu sẽ tải model mất chút thời gian)")
+reader = easyocr.Reader(['en'])
+print("EasyOCR đã sẵn sàng!")
 
 # Dictionary filter và mapping ý nghĩa biển báo dựa chuẩn xác trên 56 classes từ dataset.
 # Lưu ý: Các class bên ngoài danh sách này (như người, xe, v.v) sẽ bị loại bỏ hoàn toàn.
@@ -111,13 +116,34 @@ def process_image():
     
     # Trích xuất class (kèm filter)
     detected_names_set = set()
+    orig_img = result.orig_img
+    
     for box in result.boxes:
         class_id = int(box.cls[0].item())
         class_name = model.names[class_id].upper()
         
         # Chỉ nhận diện nếu có trong dictionary
         if class_name in sign_meanings:
-            detected_names_set.add(sign_meanings[class_name])
+            meaning = sign_meanings[class_name]
+            
+            # Module nhận diện chữ số OCR cho tốc độ
+            if class_name == "P-127":
+                x1, y1, x2, y2 = box.xyxy[0].tolist()
+                crop_img = orig_img[int(y1):int(y2), int(x1):int(x2)]
+                
+                # Cắt và đọc
+                ocr_results = reader.readtext(crop_img, allowlist='0123456789')
+                best_text = ""
+                highest_prob = 0
+                for label_bbox, text, prob in ocr_results:
+                    if text.isdigit() and prob > highest_prob:
+                        best_text = text
+                        highest_prob = prob
+                        
+                if best_text:
+                    meaning = f"{meaning} {best_text} km/h"
+                    
+            detected_names_set.add(meaning)
     
     detected_names = list(detected_names_set)
 
@@ -162,6 +188,7 @@ def detect_frame():
     
     detections = []
     detected_names_set = set()
+    orig_img = result.orig_img
     
     for box in result.boxes:
         class_id = int(box.cls[0].item())
@@ -175,6 +202,22 @@ def detect_frame():
         meaning = sign_meanings[class_name]
         x1, y1, x2, y2 = box.xyxy[0].tolist()
         
+        # Module nhận diện chữ số OCR cho tốc độ
+        if class_name == "P-127":
+            crop_img = orig_img[int(y1):int(y2), int(x1):int(x2)]
+            
+            # Cắt và đọc
+            ocr_results = reader.readtext(crop_img, allowlist='0123456789')
+            best_text = ""
+            highest_prob = 0
+            for label_bbox, text, prob in ocr_results:
+                if text.isdigit() and prob > highest_prob:
+                    best_text = text
+                    highest_prob = prob
+                    
+            if best_text:
+                meaning = f"{meaning} {best_text} km/h"
+                
         detections.append({
             'box': [x1, y1, x2, y2],
             'class_name': class_name,
