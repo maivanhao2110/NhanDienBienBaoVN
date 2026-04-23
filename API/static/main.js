@@ -104,11 +104,21 @@ function adjustCanvasSize(videoEl, canvasEl) {
 }
 
 let isProcessingFrame = false;
+let lastFrameTime = Date.now();
+let framesReceived = 0;
+let currentFps = 0;
 
 // Process a single frame wrapper
-async function processVideoFrame(videoEl, overlayCanvas) {
+async function processVideoFrame(videoEl, overlayCanvas, tabType) {
     if (isProcessingFrame || videoEl.paused || videoEl.ended) return;
     isProcessingFrame = true;
+
+    // Get current settings based on tab
+    const useRoi = document.getElementById(`${tabType}-roi-toggle`).checked;
+    const useDistance = document.getElementById(`${tabType}-dist-toggle`).checked;
+    const carOnly = document.getElementById(`${tabType}-car-toggle`).checked;
+    const minHeight = parseInt(document.getElementById(`${tabType}-height-thresh`).value);
+    const fpsDisplay = document.getElementById(`${tabType}-fps`);
 
     // Grab frame
     const tempCanvas = document.createElement('canvas');
@@ -117,16 +127,33 @@ async function processVideoFrame(videoEl, overlayCanvas) {
     const tCtx = tempCanvas.getContext('2d');
     tCtx.drawImage(videoEl, 0, 0, tempCanvas.width, tempCanvas.height);
     
-    const base64Image = tempCanvas.toDataURL('image/jpeg', 0.6); // 60% quality is enough for detection
+    const base64Image = tempCanvas.toDataURL('image/jpeg', 0.6); 
 
     try {
         const response = await fetch('/detect_frame', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: base64Image })
+            body: JSON.stringify({ 
+                image: base64Image,
+                use_roi: useRoi,
+                use_distance: useDistance,
+                car_only: carOnly,
+                min_height: minHeight
+            })
         });
         const data = await response.json();
         
+        // Update FPS calculation
+        framesReceived++;
+        const now = Date.now();
+        const elapsed = now - lastFrameTime;
+        if (elapsed >= 1000) {
+            currentFps = Math.round((framesReceived * 1000) / elapsed);
+            fpsDisplay.textContent = `FPS: ${currentFps}`;
+            framesReceived = 0;
+            lastFrameTime = now;
+        }
+
         adjustCanvasSize(videoEl, overlayCanvas);
         
         // Draw boxes
@@ -141,29 +168,36 @@ async function processVideoFrame(videoEl, overlayCanvas) {
                 const width = x2 - x1;
                 const height = y2 - y1;
 
-                // Cập nhật biển báo có độ tự tin cao nhất
                 if (det.confidence > highestConfidenceDet.confidence) {
                     highestConfidenceDet = det;
                 }
 
+                // Màu sắc theo thứ tự ưu tiên
+                let boxColor = '#22c55e'; // Green (Normal/Medium)
+                if (det.priority === 'high') boxColor = '#f59e0b'; // Amber/Orange
+                if (det.priority === 'none') boxColor = '#3b82f6'; // Blue
+
                 // Draw bounding box
-                ctx.strokeStyle = '#22c55e'; // green 500
+                ctx.strokeStyle = boxColor;
                 ctx.lineWidth = Math.max(3, overlayCanvas.width / 300);
                 ctx.strokeRect(x1, y1, width, height);
 
                 // Draw label background
-                ctx.fillStyle = '#22c55e';
+                ctx.fillStyle = boxColor;
                 const label = `[${det.class_name}] ${det.meaning} ${(det.confidence * 100).toFixed(0)}%`;
-                ctx.font = `${Math.max(16, overlayCanvas.width / 50)}px Inter`;
+                ctx.font = `bold ${Math.max(14, overlayCanvas.width / 60)}px Inter`;
                 const textWidth = ctx.measureText(label).width;
                 ctx.fillRect(x1, y1 - 25, textWidth + 10, 25);
 
                 // Draw label text
                 ctx.fillStyle = '#fff';
                 ctx.fillText(label, x1 + 5, y1 - 5);
+                
+                // Hiển thị chiều cao bbox (debug info) nếu muốn
+                // ctx.font = '12px Inter';
+                // ctx.fillText(`H: ${Math.round(height)}px`, x1, y1 + height + 15);
             });
 
-            // Chỉ đọc ý nghĩa của biển báo có độ tự tin cao nhất
             speakDetectedClasses([highestConfidenceDet.meaning]);
         }
 
@@ -198,7 +232,7 @@ function handleVideoFile(input) {
         // Start processing loop when video plays
         if(videoInterval) clearInterval(videoInterval);
         videoInterval = setInterval(() => {
-            processVideoFrame(videoEl, overlay);
+            processVideoFrame(videoEl, overlay, 'video');
         }, 150); // ~6-7 FPS
     };
 
@@ -246,7 +280,7 @@ async function startCamera() {
         videoEl.onplay = () => {
             if(cameraInterval) clearInterval(cameraInterval);
             cameraInterval = setInterval(() => {
-                processVideoFrame(videoEl, overlay);
+                processVideoFrame(videoEl, overlay, 'camera');
             }, 100); // ~10 FPS for camera is smoother
         };
         

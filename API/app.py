@@ -172,6 +172,12 @@ def detect_frame():
     if not data or 'image' not in data:
         return jsonify({'error': 'No image data payload'}), 400
         
+    # Lấy các tham số cấu hình từ frontend
+    use_roi = data.get('use_roi', False)
+    use_distance = data.get('use_distance', False)
+    car_only = data.get('car_only', False)
+    min_height = data.get('min_height', 25)
+    
     base64_img = data['image']
     if "," in base64_img:
         base64_img = base64_img.split(",")[1]
@@ -189,6 +195,7 @@ def detect_frame():
     detections = []
     detected_names_set = set()
     orig_img = result.orig_img
+    h_frame, w_frame = img.shape[:2]
     
     for box in result.boxes:
         class_id = int(box.cls[0].item())
@@ -199,9 +206,32 @@ def detect_frame():
         if class_name not in sign_meanings:
             continue
             
+        # Lọc bỏ biển báo KHÔNG liên quan tới xe ô tô con/ô tô cá nhân
+        if car_only:
+            # Danh sách các mã biển báo: Không ảnh hưởng, Cấm xe tải, Cấm mô tô, Cấm đi bộ, Bến xe buýt...
+            non_car_signs = ["P-104", "P-106A", "P-106B", "P-107A", "P-112", "R-434"]
+            if class_name in non_car_signs:
+                continue
+
         meaning = sign_meanings[class_name]
         x1, y1, x2, y2 = box.xyxy[0].tolist()
         
+        # 1. Lọc theo ROI (Chỉ giữ biển báo bên phải)
+        x_center = (x1 + x2) / 2
+        if use_roi:
+            if x_center <= 0.3 * w_frame:
+                continue # Loại bỏ
+            
+            # Logic ưu tiên (gửi về frontend để vẽ màu khác nhau nếu cần)
+            priority = "high" if x_center > 0.6 * w_frame else "medium"
+        else:
+            priority = "none"
+
+        # 2. Lọc theo khoảng cách (dựa trên chiều cao bbox)
+        bbox_height = y2 - y1
+        if use_distance and bbox_height < min_height:
+            continue # Loại bỏ biển ở xa (>40m)
+
         # Module nhận diện chữ số OCR cho tốc độ
         if class_name == "P-127":
             crop_img = orig_img[int(y1):int(y2), int(x1):int(x2)]
@@ -222,7 +252,9 @@ def detect_frame():
             'box': [x1, y1, x2, y2],
             'class_name': class_name,
             'meaning': meaning,
-            'confidence': conf
+            'confidence': conf,
+            'priority': priority,
+            'height': bbox_height
         })
         detected_names_set.add(meaning)
         

@@ -58,8 +58,41 @@
                 </div>
                 <!-- Video container -->
                 <div id="video-player-container" class="media-container" style="display:none;">
-                    <video id="videoElement" controls playsinline></video>
-                    <canvas id="videoOverlay" class="media-overlay"></canvas>
+                    <!-- Settings Panel -->
+                    <div class="cv-settings-panel mb-1">
+                        <div class="setting-item">
+                            <label class="switch">
+                                <input type="checkbox" id="video-roi-toggle" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>Lọc ROI</span>
+                        </div>
+                        <div class="setting-item">
+                            <label class="switch">
+                                <input type="checkbox" id="video-dist-toggle" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>Lọc Ngưỡng</span>
+                        </div>
+                        <div class="setting-item">
+                            <label class="switch">
+                                <input type="checkbox" id="video-car-toggle" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>Chỉ Ô tô</span>
+                        </div>
+                        <div class="setting-item range-item">
+                            <span>Ngưỡng (px):</span>
+                            <input type="range" id="video-height-thresh" min="10" max="100" value="25" oninput="this.nextElementSibling.value = this.value">
+                            <output>25</output>
+                        </div>
+                    </div>
+
+                    <div class="video-wrapper">
+                        <video id="videoElement" controls playsinline></video>
+                        <canvas id="videoOverlay" class="media-overlay"></canvas>
+                        <div class="fps-counter" id="video-fps">FPS: --</div>
+                    </div>
                     
                     <div class="mt-1 d-flex gap-1">
                         <button class="btn-secondary" onclick="resetVideoTab()">Đóng video</button>
@@ -76,8 +109,41 @@
                 </div>
                 
                 <div id="camera-container" class="media-container" style="display:none;">
-                    <video id="webcamElement" autoplay playsinline muted></video>
-                    <canvas id="webcamOverlay" class="media-overlay"></canvas>
+                    <!-- Settings Panel -->
+                    <div class="cv-settings-panel mb-1">
+                        <div class="setting-item">
+                            <label class="switch">
+                                <input type="checkbox" id="camera-roi-toggle" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>Lọc ROI</span>
+                        </div>
+                        <div class="setting-item">
+                            <label class="switch">
+                                <input type="checkbox" id="camera-dist-toggle" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>Lọc Ngưỡng</span>
+                        </div>
+                         <div class="setting-item">
+                            <label class="switch">
+                                <input type="checkbox" id="camera-car-toggle" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>Chỉ Ô tô</span>
+                        </div>
+                        <div class="setting-item range-item">
+                            <span>Ngưỡng (px):</span>
+                            <input type="range" id="camera-height-thresh" min="10" max="100" value="25" oninput="this.nextElementSibling.value = this.value">
+                            <output>25</output>
+                        </div>
+                    </div>
+
+                    <div class="camera-wrapper">
+                        <video id="webcamElement" autoplay playsinline muted></video>
+                        <canvas id="webcamOverlay" class="media-overlay"></canvas>
+                        <div class="fps-counter" id="camera-fps">FPS: --</div>
+                    </div>
                 </div>
                 <div id="camera-processing-status" class="status-badge mt-1" style="display:none;">Đang phân tích Real-time...</div>
             </div>
