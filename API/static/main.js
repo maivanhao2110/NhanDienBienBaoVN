@@ -114,7 +114,6 @@ async function processVideoFrame(videoEl, overlayCanvas, tabType) {
     isProcessingFrame = true;
 
     // Get current settings based on tab
-    const useRoi = document.getElementById(`${tabType}-roi-toggle`).checked;
     const useDistance = document.getElementById(`${tabType}-dist-toggle`).checked;
     const carOnly = document.getElementById(`${tabType}-car-toggle`).checked;
     const minHeight = parseInt(document.getElementById(`${tabType}-height-thresh`).value);
@@ -135,7 +134,6 @@ async function processVideoFrame(videoEl, overlayCanvas, tabType) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 image: base64Image,
-                use_roi: useRoi,
                 use_distance: useDistance,
                 car_only: carOnly,
                 min_height: minHeight
@@ -172,10 +170,7 @@ async function processVideoFrame(videoEl, overlayCanvas, tabType) {
                     highestConfidenceDet = det;
                 }
 
-                // Màu sắc theo thứ tự ưu tiên
-                let boxColor = '#22c55e'; // Green (Normal/Medium)
-                if (det.priority === 'high') boxColor = '#f59e0b'; // Amber/Orange
-                if (det.priority === 'none') boxColor = '#3b82f6'; // Blue
+                const boxColor = '#22c55e'; // Green 500
 
                 // Draw bounding box
                 ctx.strokeStyle = boxColor;

@@ -173,7 +173,6 @@ def detect_frame():
         return jsonify({'error': 'No image data payload'}), 400
         
     # Lấy các tham số cấu hình từ frontend
-    use_roi = data.get('use_roi', False)
     use_distance = data.get('use_distance', False)
     car_only = data.get('car_only', False)
     min_height = data.get('min_height', 25)
@@ -215,17 +214,6 @@ def detect_frame():
 
         meaning = sign_meanings[class_name]
         x1, y1, x2, y2 = box.xyxy[0].tolist()
-        
-        # 1. Lọc theo ROI (Chỉ giữ biển báo bên phải)
-        x_center = (x1 + x2) / 2
-        if use_roi:
-            if x_center <= 0.3 * w_frame:
-                continue # Loại bỏ
-            
-            # Logic ưu tiên (gửi về frontend để vẽ màu khác nhau nếu cần)
-            priority = "high" if x_center > 0.6 * w_frame else "medium"
-        else:
-            priority = "none"
 
         # 2. Lọc theo khoảng cách (dựa trên chiều cao bbox)
         bbox_height = y2 - y1
@@ -253,7 +241,6 @@ def detect_frame():
             'class_name': class_name,
             'meaning': meaning,
             'confidence': conf,
-            'priority': priority,
             'height': bbox_height
         })
         detected_names_set.add(meaning)
